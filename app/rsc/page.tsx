@@ -1,24 +1,15 @@
-"use client";
-
-import { useChat } from "./use-chat";
+import Header from "@/app/components/header";
+import ChatSection from "./chat-section";
 
 export default function Home() {
-  const { input, messages, submit, handleInputChange, isLoading } = useChat();
-
   return (
-    <div>
-      <p>Isloading: {isLoading ? "true" : "false"} </p>
-      <ul>
-        {messages.map((message) => (
-          <li key={message.id} className="wrap">
-            {message.display}
-          </li>
-        ))}
-      </ul>
-      <div>
-        <input type="text" value={input} onChange={handleInputChange} />
-        <button onClick={() => submit(input)}>Send Message</button>
+    <main className="h-screen w-screen flex justify-center items-center background-gradient">
+      <div className="space-y-2 lg:space-y-10 w-[90%] lg:w-[60rem]">
+        <Header />
+        <div className="h-[65vh] flex">
+          <ChatSection />
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

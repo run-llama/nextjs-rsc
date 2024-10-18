@@ -2,7 +2,8 @@ import { readStreamableValue, useActions } from "ai/rsc";
 
 import { generateId } from "ai";
 import { useUIState } from "ai/rsc";
-import { ReactNode, useState } from "react";
+import { useState } from "react";
+import Markdown from "../components/ui/chat/chat-message/markdown";
 import { AIProvider } from "./ai";
 import { ClientMessage, StreamingStatus, WithStreamingStatus } from "./types";
 
@@ -24,7 +25,7 @@ export function useChat({ onStreaming, onFinish, onError }: UseChatProps = {}) {
       const userMessage: ClientMessage = {
         id: generateId(),
         role: "user",
-        display: toUserInputDisplay(input, data),
+        display: <Markdown content={input} />,
       };
       setMessages((prev) => [...prev, userMessage]);
       const assistantMessage = await chat(input);
@@ -34,6 +35,7 @@ export function useChat({ onStreaming, onFinish, onError }: UseChatProps = {}) {
       onError?.(error);
     } finally {
       setIsLoading(false);
+      setInput("");
     }
   }
 
@@ -74,9 +76,4 @@ export function useChat({ onStreaming, onFinish, onError }: UseChatProps = {}) {
     setMessages,
     submit,
   };
-}
-
-// TODO: ChatMessage
-function toUserInputDisplay(input: string, data?: any): ReactNode {
-  return <div className="font-bold">{input}</div>;
 }
