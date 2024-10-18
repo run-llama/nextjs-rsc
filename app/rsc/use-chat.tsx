@@ -1,26 +1,26 @@
-import { useActions } from "ai/rsc";
+import { readStreamableValue, useActions } from "ai/rsc";
 
 import { generateId } from "ai";
 import { useUIState } from "ai/rsc";
 import { ReactNode, useState } from "react";
-import { AIProvider } from "../ai";
-import { ClientMessage } from "../types";
+import { AIProvider } from "./ai";
+import { ClientMessage, StreamingStatus, WithStreamingStatus } from "./types";
 
 export interface UseChatProps {
-  onError?: (error: unknown) => void;
-  // TODO: onFinish
+  onStreaming?: () => void;
+  onFinish?: () => void;
+  onError?: (error?: unknown) => void;
 }
 
-export function useChat({ onError }: UseChatProps = {}) {
+export function useChat({ onStreaming, onFinish, onError }: UseChatProps = {}) {
   const [input, setInput] = useState<string>("");
-  // TODO: move to server status: IDLE, STREAMING, FINISHED
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [messages, setMessages] = useUIState<AIProvider>();
   const { chat } = useActions<AIProvider>();
 
   async function submit(input: string, data?: any) {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
       const userMessage: ClientMessage = {
         id: generateId(),
         role: "user",
@@ -29,10 +29,31 @@ export function useChat({ onError }: UseChatProps = {}) {
       setMessages((prev) => [...prev, userMessage]);
       const assistantMessage = await chat(input);
       setMessages((prev) => [...prev, assistantMessage]);
+      await handleStreamingStatus(assistantMessage.status);
     } catch (error) {
       onError?.(error);
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function handleStreamingStatus(
+    streamingStatus: WithStreamingStatus<ClientMessage>["status"],
+  ) {
+    for await (const status of readStreamableValue(streamingStatus)) {
+      switch (status) {
+        case StreamingStatus.STREAMING:
+          onStreaming?.();
+          break;
+        case StreamingStatus.FINISHED:
+          onFinish?.();
+          break;
+        case StreamingStatus.ERROR:
+          onError?.();
+          break;
+        default:
+          break;
+      }
     }
   }
 

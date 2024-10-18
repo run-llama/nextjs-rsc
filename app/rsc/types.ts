@@ -1,3 +1,4 @@
+import { StreamableValue } from "ai/rsc";
 import { ReactNode } from "react";
 
 type Role = "user" | "assistant";
@@ -33,7 +34,27 @@ interface ClientMessage {
  * and return a ClientMessage with the UI
  */
 type AIActions = {
-  chat: (message: string, data?: any) => Promise<ClientMessage>;
+  chat: (
+    message: string,
+    data?: any,
+  ) => Promise<WithStreamingStatus<ClientMessage>>;
 };
 
-export type { AIActions, ClientMessage, ServerMessage };
+enum StreamingStatus {
+  IDLE = "idle",
+  STREAMING = "streaming",
+  FINISHED = "finished",
+  ERROR = "error",
+}
+
+type WithStreamingStatus<T> = T & {
+  status: StreamableValue<StreamingStatus, any>;
+};
+
+export {
+  StreamingStatus,
+  type AIActions,
+  type ClientMessage,
+  type ServerMessage,
+  type WithStreamingStatus,
+};

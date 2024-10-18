@@ -1,12 +1,13 @@
 "use client";
 
-import { useChat } from "./actions/use-chat";
+import { useChat } from "./use-chat";
 
 export default function Home() {
-  const { input, messages, submit, handleInputChange } = useChat();
+  const { input, messages, submit, handleInputChange, isLoading } = useChat();
 
   return (
     <div>
+      <p>Isloading: {isLoading ? "true" : "false"} </p>
       <ul>
         {messages.map((message) => (
           <li key={message.id} className="wrap">
