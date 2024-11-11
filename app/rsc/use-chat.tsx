@@ -1,9 +1,9 @@
 import { readStreamableValue, useActions } from "ai/rsc";
 
+import { Markdown } from "@llamaindex/chat-ui/widgets";
 import { generateId } from "ai";
 import { useUIState } from "ai/rsc";
 import { useState } from "react";
-import Markdown from "../components/ui/chat/chat-message/markdown";
 import { AIProvider } from "./ai";
 import { ClientMessage, StreamingStatus, WithStreamingStatus } from "./types";
 
@@ -37,6 +37,7 @@ export function useChat({ onStreaming, onFinish, onError }: UseChatProps = {}) {
       setIsLoading(false);
       setInput("");
     }
+    return input;
   }
 
   async function handleStreamingStatus(

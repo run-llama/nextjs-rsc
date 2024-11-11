@@ -1,5 +1,6 @@
 "use server";
 
+import { ChatEvents, Markdown } from "@llamaindex/chat-ui/widgets";
 import { generateId } from "ai";
 import {
   createStreamableUI,
@@ -47,9 +48,19 @@ export async function chat(
         },
         write: async (message) => {
           content += message.delta;
-          uiStream.append(message.delta);
+          // TODO: better append to StreamableValue and use uiStream for rendering annotations
+          // uiStream.append(message.delta) will be better uiStream.update (prevent re-rendering Markdown)
+          uiStream.update(<Markdown content={content} />);
         },
         close: () => {
+          // TODO: remove this test event
+          uiStream.append(
+            <ChatEvents
+              data={[{ title: "This annotation will appear after markdown" }]}
+              isLoading={false}
+              isLast={true}
+            />,
+          );
           aiState.done([...aiState.get(), { role: "assistant", content }]); // save assistant message
           uiStream.done();
           status.done(StreamingStatus.FINISHED);
