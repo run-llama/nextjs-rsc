@@ -12,23 +12,20 @@ export function useChatRSC() {
   const { chat } = useActions<AIProvider>();
 
   const append = async (message: Omit<Message, "id">, data?: any) => {
-    const id = generateId();
-    const { role, content } = message;
-    const userMessage: Message = { id, role, content };
+    const newMsg: Message = { ...message, id: generateId() };
 
     setIsLoading(true);
     try {
-      setMessages((prev) => [...prev, { ...userMessage, display: content }]);
-      const assistantMessage = await chat(userMessage, data);
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, { ...newMsg, display: message.content }]);
+      const assistantMsg = await chat(newMsg, data);
+      setMessages((prev) => [...prev, assistantMsg]);
     } catch (error) {
       console.error(error);
     }
-
     setIsLoading(false);
     setInput("");
 
-    return id;
+    return message.content;
   };
 
   return {
