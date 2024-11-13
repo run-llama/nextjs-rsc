@@ -5,35 +5,23 @@ import {
   ChatMessage,
   ChatMessages,
   ChatSection as ChatSectionUI,
-  Message,
 } from "@llamaindex/chat-ui";
 import "@llamaindex/chat-ui/styles/code.css";
 import "@llamaindex/chat-ui/styles/katex.css";
-import { useChat } from "../rsc/use-chat";
+import "@llamaindex/chat-ui/styles/pdf.css";
+import { useChatRSC } from "../rsc/use-chat";
 
 export default function ChatSection() {
-  const handler = useChat();
-
-  const messages = handler.messages.map((message) => {
-    return { ...message, content: "" }; // FIX: remove content
-  });
-
-  const append = (message: Message, data?: any) =>
-    handler.submit(message.content, data);
-
+  const handler = useChatRSC();
   return (
-    <ChatSectionUI
-      handler={{ ...handler, append, messages }}
-      className="w-full"
-    >
+    <ChatSectionUI handler={handler} className="w-full">
       <ChatMessages className="rounded-xl shadow-xl">
         <ChatMessages.List>
-          {messages.map((message, index) => (
+          {handler.messages.map((message, index) => (
             <ChatMessage
               key={index}
               message={{ ...message, content: "" }}
-              isLast={index === messages.length - 1}
-              className="items-start pt-4"
+              isLast={index === handler.messages.length - 1}
             >
               <ChatMessage.Avatar />
               <ChatMessage.Content className="items-start">
@@ -42,10 +30,16 @@ export default function ChatSection() {
               <ChatMessage.Actions />
             </ChatMessage>
           ))}
+          <ChatMessages.Loading />
         </ChatMessages.List>
-        <ChatMessages.Actions />
       </ChatMessages>
-      <ChatInput className="rounded-lg shadow-lg" />
+      <ChatInput className="rounded-xl shadow-xl" />
     </ChatSectionUI>
   );
 }
+
+/**
+ * TODO:
+ * - Support stop and reload in <ChatMessages.Actions />
+ * - Support upload files in <ChatInput.Upload />
+ */

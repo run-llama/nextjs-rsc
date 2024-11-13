@@ -1,8 +1,13 @@
+import { Message } from "ai";
 import { createAI } from "ai/rsc";
-import { chat } from "./actions";
-import { AIActions, ClientMessage, ServerMessage } from "./types";
+import { ReactNode } from "react";
+import { chat, ChatAction } from "./chat.action";
 
-export const AI = createAI<ServerMessage[], ClientMessage[], AIActions>({
+type ServerState = Message[]; // a list of messages
+type FrontendState = Array<Message & { display: ReactNode }>; // list of messages with UI
+type Actions = { chat: ChatAction }; // server actions
+
+export const AI = createAI<ServerState, FrontendState, Actions>({
   actions: { chat },
   initialAIState: [],
   initialUIState: [],
