@@ -1,5 +1,5 @@
 import Header from "@/app/components/header";
-import ChatSection from "./rsc/chat-section";
+import ChatSection from "./components/chat-section";
 
 export default function Home() {
   return (

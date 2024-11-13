@@ -7,9 +7,9 @@ import {
   ChatSection as ChatSectionUI,
   Message,
 } from "@llamaindex/chat-ui";
-import '@llamaindex/chat-ui/styles/code.css'
-import '@llamaindex/chat-ui/styles/katex.css'
-import { useChat } from "./use-chat";
+import "@llamaindex/chat-ui/styles/code.css";
+import "@llamaindex/chat-ui/styles/katex.css";
+import { useChat } from "../rsc/use-chat";
 
 export default function ChatSection() {
   const handler = useChat();

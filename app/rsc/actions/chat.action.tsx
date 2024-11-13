@@ -57,8 +57,7 @@ export async function chat(
           uiStream.append(
             <ChatEvents
               data={[{ title: "This annotation will appear after markdown" }]}
-              isLoading={false}
-              isLast={true}
+              showLoading={false}
             />,
           );
           aiState.done([...aiState.get(), { role: "assistant", content }]); // save assistant message
