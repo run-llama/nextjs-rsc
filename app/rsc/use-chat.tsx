@@ -3,6 +3,7 @@ import { useActions } from "ai/rsc";
 import { generateId, Message } from "ai";
 import { useUIState } from "ai/rsc";
 import { useState } from "react";
+import { UserMessageDisplay } from "../components/chat/custom/annotations";
 import { AIProvider } from "./ai";
 
 export function useChatRSC() {
@@ -16,7 +17,18 @@ export function useChatRSC() {
 
     setIsLoading(true);
     try {
-      setMessages((prev) => [...prev, { ...newMsg, display: message.content }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          ...newMsg,
+          display: (
+            <UserMessageDisplay
+              content={message.content}
+              annotations={message.annotations}
+            />
+          ),
+        },
+      ]);
       const assistantMsg = await chat(newMsg, data);
       setMessages((prev) => [...prev, assistantMsg]);
     } catch (error) {

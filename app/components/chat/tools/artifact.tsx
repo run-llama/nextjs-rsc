@@ -2,14 +2,14 @@
 
 import { Check, ChevronDown, Code, Copy, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button, buttonVariants } from "../../button";
+import { Button, buttonVariants } from "../../ui/button";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "../../collapsible";
-import { cn } from "../../lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../tabs";
+} from "../../ui/collapsible";
+import { cn } from "../../ui/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { Markdown } from "../custom/markdown";
 import { useClientConfig } from "../hooks/use-config";
 import { useCopyToClipboard } from "../hooks/use-copy-to-clipboard";

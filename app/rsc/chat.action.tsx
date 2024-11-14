@@ -1,10 +1,18 @@
 "use server";
 
-import { Markdown } from "@llamaindex/chat-ui/widgets";
-import { generateId, Message } from "ai";
+import { generateId, LlamaIndexAdapter, Message, parseStreamPart } from "ai";
 import { createStreamableUI, getMutableAIState } from "ai/rsc";
-import { ChatMessage, OpenAIAgent } from "llamaindex";
+import { ChatMessage, Settings } from "llamaindex";
 import { ReactNode } from "react";
+import { createChatEngine } from "../api/chat/engine/chat";
+import {
+  retrieveDocumentIds,
+  retrieveMessageContent,
+} from "../api/chat/llamaindex/streaming/annotations";
+import { generateNextQuestions } from "../api/chat/llamaindex/streaming/suggestion";
+import { createCallbackManager } from "../api/chat/llamaindex/streaming/ui-events";
+import { CustomSuggestedQuestions } from "../components/chat/custom/annotations";
+import { Markdown } from "../components/chat/custom/markdown";
 import { AIProvider } from "./ai";
 
 export type ChatAction = (
@@ -13,36 +21,59 @@ export type ChatAction = (
 ) => Promise<Message & { display: ReactNode }>;
 
 export const chat: ChatAction = async (message: Message, data?: any) => {
+  // save user message to server state
   const aiState = getMutableAIState<AIProvider>();
-  aiState.update((prev) => [...prev, message]); // save user message
+  aiState.update((prev) => [...prev, message]);
 
-  // call LLM to get response
-  const chatHistory = prepareChatHistory(aiState.get(), data);
-  const agent = new OpenAIAgent({ tools: [] });
-  const responseStream = await agent.chat({
-    stream: true,
-    message: message.content,
-    chatHistory,
+  // prepare chat history
+  const messages = aiState.get();
+  const chatHistory: ChatMessage[] = messages as ChatMessage[];
+  const ids = retrieveDocumentIds(messages);
+  const chatEngine = await createChatEngine(ids, data);
+  const userMessageContent = retrieveMessageContent(messages);
+
+  // create UI stream and callback manager
+  const uiStream = createStreamableUI();
+  const callbackManager = createCallbackManager(uiStream);
+
+  // start chat engine
+  const response = await Settings.withCallbackManager(callbackManager, () => {
+    return chatEngine.chat({
+      message: userMessageContent,
+      chatHistory,
+      stream: true,
+    });
   });
 
-  // stream response to client
-  const uiStream = createStreamableUI();
+  const onFinal = (content: string) => {
+    generateNextQuestions([...chatHistory, { role: "assistant", content }])
+      .then((questions: string[]) => {
+        if (questions.length > 0) {
+          uiStream.append(<CustomSuggestedQuestions questions={questions} />);
+        }
+      })
+      .finally(() => {
+        uiStream.done();
+      });
+  };
+
+  // Generate assistant message with UI
   const assistantMessage: Message = {
     id: generateId(),
     role: "assistant",
     content: "",
   };
-
-  responseStream
+  const dataStream = LlamaIndexAdapter.toDataStream(response, { onFinal });
+  dataStream
+    .pipeThrough(new TextDecoderStream())
     .pipeTo(
       new WritableStream({
         write: async (message) => {
-          assistantMessage.content += message.delta;
+          assistantMessage.content += parseStreamPart(message).value;
           uiStream.update(<Markdown content={assistantMessage.content} />);
         },
         close: () => {
           aiState.done([...aiState.get(), assistantMessage]);
-          uiStream.done();
         },
       }),
     )
@@ -55,14 +86,3 @@ export const chat: ChatAction = async (message: Message, data?: any) => {
     display: uiStream.value,
   };
 };
-
-// TODO: convert data, annotations to ChatMessage
-function prepareChatHistory(
-  serverMessages: Message[],
-  data?: any,
-): ChatMessage[] {
-  return serverMessages.map((message) => ({
-    role: message.role,
-    content: message.content,
-  })) as ChatMessage[];
-}
