@@ -1,19 +1,21 @@
 import { JSONValue, Message } from "ai";
-import { MessageContent, MessageContentDetail } from "llamaindex";
+import {
+  ChatMessage,
+  MessageContent,
+  MessageContentDetail,
+  MessageType,
+} from "llamaindex";
+import { UPLOADED_FOLDER } from "../documents/helper";
 
 export type DocumentFileType = "csv" | "pdf" | "txt" | "docx";
 
-export type UploadedFileMeta = {
+export type DocumentFile = {
   id: string;
   name: string;
-  url?: string;
-  refs?: string[];
-};
-
-export type DocumentFile = {
-  type: DocumentFileType;
+  size: number;
+  type: string;
   url: string;
-  metadata: UploadedFileMeta;
+  refs?: string[];
 };
 
 type Annotation = {
@@ -30,7 +32,7 @@ export function isValidMessages(messages: Message[]): boolean {
 export function retrieveDocumentIds(messages: Message[]): string[] {
   // retrieve document Ids from the annotations of all messages (if any)
   const documentFiles = retrieveDocumentFiles(messages);
-  return documentFiles.map((file) => file.metadata?.refs || []).flat();
+  return documentFiles.map((file) => file.refs || []).flat();
 }
 
 export function retrieveDocumentFiles(messages: Message[]): DocumentFile[] {
@@ -62,17 +64,55 @@ export function retrieveMessageContent(messages: Message[]): MessageContent {
   ];
 }
 
+export function convertToChatHistory(messages: Message[]): ChatMessage[] {
+  if (!messages || !Array.isArray(messages)) {
+    return [];
+  }
+  const agentHistory = retrieveAgentHistoryMessage(messages);
+  if (agentHistory) {
+    const previousMessages = messages.slice(0, -1);
+    return [...previousMessages, agentHistory].map((msg) => ({
+      role: msg.role as MessageType,
+      content: msg.content,
+    }));
+  }
+  return messages.map((msg) => ({
+    role: msg.role as MessageType,
+    content: msg.content,
+  }));
+}
+
+function retrieveAgentHistoryMessage(
+  messages: Message[],
+  maxAgentMessages = 10,
+): ChatMessage | null {
+  const agentAnnotations = getAnnotations<{ agent: string; text: string }>(
+    messages,
+    { role: "assistant", type: "agent" },
+  ).slice(-maxAgentMessages);
+
+  if (agentAnnotations.length > 0) {
+    const messageContent =
+      "Here is the previous conversation of agents:\n" +
+      agentAnnotations.map((annotation) => annotation.data.text).join("\n");
+    return {
+      role: "assistant",
+      content: messageContent,
+    };
+  }
+  return null;
+}
+
 function getFileContent(file: DocumentFile): string {
-  const fileMetadata = file.metadata;
-  let defaultContent = `=====File: ${fileMetadata.name}=====\n`;
+  let defaultContent = `=====File: ${file.name}=====\n`;
   // Include file URL if it's available
   const urlPrefix = process.env.FILESERVER_URL_PREFIX;
   let urlContent = "";
   if (urlPrefix) {
-    if (fileMetadata.url) {
-      urlContent = `File URL: ${fileMetadata.url}\n`;
+    if (file.url) {
+      urlContent = `File URL: ${file.url}\n`;
     } else {
-      urlContent = `File URL (instruction: do not update this file URL yourself): ${urlPrefix}/output/uploaded/${fileMetadata.name}\n`;
+      urlContent = `File URL (instruction: do not update this file URL yourself): ${urlPrefix}/output/uploaded/${file.name}\n`;
     }
   } else {
     console.warn(
@@ -82,12 +122,16 @@ function getFileContent(file: DocumentFile): string {
   defaultContent += urlContent;
 
   // Include document IDs if it's available
-  if (fileMetadata.refs) {
-    defaultContent += `Document IDs: ${fileMetadata.refs}\n`;
+  if (file.refs) {
+    defaultContent += `Document IDs: ${file.refs}\n`;
   }
   // Include sandbox file paths
-  const sandboxFilePath = `/tmp/${fileMetadata.name}`;
+  const sandboxFilePath = `/tmp/${file.name}`;
   defaultContent += `Sandbox file path (instruction: only use sandbox path for artifact or code interpreter tool): ${sandboxFilePath}\n`;
+
+  // Include local file path
+  const localFilePath = `${UPLOADED_FOLDER}/${file.name}`;
+  defaultContent += `Local file path (instruction: use for local tool that requires a local path): ${localFilePath}\n`;
 
   return defaultContent;
 }
@@ -132,13 +176,10 @@ function retrieveLatestArtifact(messages: Message[]): MessageContentDetail[] {
 }
 
 function convertAnnotations(messages: Message[]): MessageContentDetail[] {
-  // annotations from the last user message that has annotations
-  const annotations: Annotation[] =
-    messages
-      .slice()
-      .reverse()
-      .find((message) => message.role === "user" && message.annotations)
-      ?.annotations?.map(getValidAnnotation) || [];
+  // get all annotations from user messages
+  const annotations: Annotation[] = messages
+    .filter((message) => message.role === "user" && message.annotations)
+    .flatMap((message) => message.annotations?.map(getValidAnnotation) || []);
   if (annotations.length === 0) return [];
 
   const content: MessageContentDetail[] = [];

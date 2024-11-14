@@ -36,4 +36,5 @@ next-env.d.ts
 
 output/
 cache/
+.cache/
 .env
