@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Message,
   MessageAnnotation,
@@ -28,7 +30,7 @@ export function ToolAnnotations({ message }: { message: Message }) {
 }
 
 // TODO: Used to render outputs of tools. If needed, add more renderers here.
-function ChatTools({
+export function ChatTools({
   data,
   artifactVersion,
 }: {
