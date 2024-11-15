@@ -1,12 +1,5 @@
 This is a [LlamaIndex](https://www.llamaindex.ai/) project using [Next.js](https://nextjs.org/) with [Vercel AI RSC](https://sdk.vercel.ai/docs/ai-sdk-rsc).
 
-## Pre-requisites
-Copy the `.env.example` file to `.env` and fill in the required environment variables.
-
-```
-OPENAI_API_KEY=your_openai_api_key
-```
-
 ## Getting Started
 
 First, install the dependencies:
