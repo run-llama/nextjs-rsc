@@ -1,13 +1,11 @@
 import { SimpleDocumentStore, VectorStoreIndex } from "llamaindex";
 import { storageContextFromDefaults } from "llamaindex/storage/StorageContext";
 
+export const STORAGE_CACHE_DIR = ".cache";
+
 export async function getDataSource(params?: any) {
-  const persistDir = process.env.STORAGE_CACHE_DIR;
-  if (!persistDir) {
-    throw new Error("STORAGE_CACHE_DIR environment variable is required!");
-  }
   const storageContext = await storageContextFromDefaults({
-    persistDir,
+    persistDir: STORAGE_CACHE_DIR,
   });
 
   const numberOfDocs = Object.keys(
