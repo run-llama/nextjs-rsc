@@ -1,5 +1,6 @@
 "use server";
 
+import { ChatSources } from "@llamaindex/chat-ui/widgets";
 import { generateId, LlamaIndexAdapter, Message, parseStreamPart } from "ai";
 import { createStreamableUI, getMutableAIState } from "ai/rsc";
 import { ChatMessage, Settings } from "llamaindex";
@@ -9,10 +10,17 @@ import {
   retrieveDocumentIds,
   retrieveMessageContent,
 } from "../api/chat/llamaindex/streaming/annotations";
-import { createCallbackManager } from "../api/chat/llamaindex/streaming/rsc-events";
+import {
+  createCallbackManager,
+  StreamData,
+} from "../api/chat/llamaindex/streaming/events";
 import { generateNextQuestions } from "../api/chat/llamaindex/streaming/suggestion";
-import { CustomSuggestedQuestions } from "../components/ui/chat/custom/annotations";
+import {
+  CustomChatEvents,
+  CustomSuggestedQuestions,
+} from "../components/ui/chat/custom/annotations";
 import { Markdown } from "../components/ui/chat/custom/markdown";
+import { ChatTools } from "../components/ui/chat/tools/chat-tools";
 import { AIProvider } from "./ai";
 
 export type ChatAction = (
@@ -34,7 +42,8 @@ export const chat: ChatAction = async (message: Message, data?: any) => {
 
   // create UI stream and callback manager
   const uiStream = createStreamableUI();
-  const callbackManager = createCallbackManager(uiStream);
+  const annotationStream = new AnnotationStream();
+  const callbackManager = createCallbackManager(annotationStream);
 
   // start chat engine
   const response = await Settings.withCallbackManager(callbackManager, () => {
@@ -70,10 +79,24 @@ export const chat: ChatAction = async (message: Message, data?: any) => {
       new WritableStream({
         write: async (message) => {
           assistantMessage.content += parseStreamPart(message).value;
-          uiStream.update(<Markdown content={assistantMessage.content} />);
+          uiStream.update(
+            <>
+              {annotationStream.eventUI}
+              {annotationStream.toolUI}
+              <Markdown content={assistantMessage.content} />
+            </>,
+          );
         },
         close: () => {
-          aiState.done([...aiState.get(), assistantMessage]);
+          uiStream.append(annotationStream.sourceUI);
+          aiState.done([
+            ...aiState.get(),
+            {
+              ...assistantMessage,
+              // save annotations to assistant message
+              annotations: annotationStream.annotations,
+            },
+          ]);
         },
       }),
     )
@@ -86,3 +109,40 @@ export const chat: ChatAction = async (message: Message, data?: any) => {
     display: uiStream.value,
   };
 };
+
+class AnnotationStream implements StreamData {
+  annotations: any[] = [];
+
+  get eventUI() {
+    const eventData = this.getAnnotationData("events");
+    if (!eventData?.length) return null;
+    return <CustomChatEvents events={eventData} />;
+  }
+
+  get toolUI() {
+    const toolData = this.getAnnotationData("tools");
+    if (!toolData?.length) return null;
+    return toolData.map((tool, index) => (
+      <ChatTools key={index} data={tool} artifactVersion={undefined} />
+    ));
+  }
+
+  get sourceUI() {
+    const sourceData = this.getAnnotationData("sources");
+    if (!sourceData?.length) return null;
+    return sourceData.map((source, index) => (
+      <ChatSources key={index} data={source} />
+    ));
+  }
+
+  appendMessageAnnotation(annotation: any) {
+    this.annotations.push(annotation);
+  }
+
+  private getAnnotationData(type: string) {
+    if (!this.annotations.length) return [];
+    return this.annotations
+      .filter((anno) => "type" in anno && anno.type === type)
+      .map((anno) => anno.data);
+  }
+}

@@ -1,4 +1,3 @@
-import { StreamData } from "ai";
 import {
   CallbackManager,
   LLamaCloudFileService,
@@ -13,6 +12,10 @@ import { DATA_DIR } from "../../engine/loader";
 import { downloadFile } from "./file";
 
 const LLAMA_CLOUD_DOWNLOAD_FOLDER = "output/llamacloud";
+
+export interface StreamData {
+  appendMessageAnnotation: (annotation: any) => void;
+}
 
 export function appendSourceData(
   data: StreamData,

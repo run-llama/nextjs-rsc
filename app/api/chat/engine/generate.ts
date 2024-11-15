@@ -3,6 +3,7 @@ import { storageContextFromDefaults } from "llamaindex/storage/StorageContext";
 
 import * as dotenv from "dotenv";
 
+import { STORAGE_CACHE_DIR } from ".";
 import { getDocuments } from "./loader";
 import { initSettings } from "./settings";
 
@@ -19,13 +20,9 @@ async function getRuntime(func: any) {
 async function generateDatasource() {
   console.log(`Generating storage context...`);
   // Split documents, create embeddings and store them in the storage context
-  const persistDir = process.env.STORAGE_CACHE_DIR;
-  if (!persistDir) {
-    throw new Error("STORAGE_CACHE_DIR environment variable is required!");
-  }
   const ms = await getRuntime(async () => {
     const storageContext = await storageContextFromDefaults({
-      persistDir,
+      persistDir: STORAGE_CACHE_DIR,
     });
     const documents = await getDocuments();
 
