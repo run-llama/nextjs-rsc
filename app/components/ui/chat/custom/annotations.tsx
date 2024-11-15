@@ -25,6 +25,7 @@ export function CustomSuggestedQuestions({
 
 export function CustomChatEvents({ events }: { events: { title: string }[] }) {
   const { isLoading } = useChatUI();
+  if (!events.length) return null;
   return <ChatEvents data={events} showLoading={isLoading} />;
 }
 

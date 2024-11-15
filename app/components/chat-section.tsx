@@ -32,6 +32,7 @@ export default function ChatSection() {
           ))}
           <ChatMessages.Loading />
         </ChatMessages.List>
+        <ChatMessages.Actions />
         <ChatStarter />
       </ChatMessages>
       <CustomChatInput />
