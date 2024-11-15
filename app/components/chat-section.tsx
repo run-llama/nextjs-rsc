@@ -1,26 +1,39 @@
 "use client";
 
-import { ChatSection as ChatSectionUI } from "@llamaindex/chat-ui";
+import {
+  ChatMessage,
+  ChatMessages,
+  ChatSection as ChatSectionUI,
+} from "@llamaindex/chat-ui";
 import "@llamaindex/chat-ui/styles/code.css";
 import "@llamaindex/chat-ui/styles/katex.css";
 import "@llamaindex/chat-ui/styles/pdf.css";
-import { useChat } from "ai/react";
+import { ChatMessageAvatar } from "./ui/chat/chat-avatar";
 import CustomChatInput from "./ui/chat/chat-input";
-import CustomChatMessages from "./ui/chat/chat-messages";
-import { useClientConfig } from "./ui/chat/hooks/use-config";
+import { ChatStarter } from "./ui/chat/chat-starter";
+import { useChatRSC } from "./use-chat-rsc";
 
 export default function ChatSection() {
-  const { backend } = useClientConfig();
-  const handler = useChat({
-    api: `${backend}/api/chat`,
-    onError: (error: unknown) => {
-      if (!(error instanceof Error)) throw error;
-      alert(JSON.parse(error.message).detail);
-    },
-  });
+  const handler = useChatRSC();
   return (
     <ChatSectionUI handler={handler} className="w-full h-full">
-      <CustomChatMessages />
+      <ChatMessages className="shadow-xl rounded-xl">
+        <ChatMessages.List>
+          {handler.messages.map((message, index) => (
+            <ChatMessage
+              key={index}
+              message={message}
+              isLast={index === handler.messages.length - 1}
+            >
+              <ChatMessageAvatar />
+              <ChatMessage.Content>{message.display}</ChatMessage.Content>
+              <ChatMessage.Actions />
+            </ChatMessage>
+          ))}
+          <ChatMessages.Loading />
+        </ChatMessages.List>
+        <ChatStarter />
+      </ChatMessages>
       <CustomChatInput />
     </ChatSectionUI>
   );

@@ -1,4 +1,4 @@
-This is a [LlamaIndex](https://www.llamaindex.ai/) project using [Next.js](https://nextjs.org/) bootstrapped with [`create-llama`](https://github.com/run-llama/LlamaIndexTS/tree/main/packages/create-llama).
+This is a [LlamaIndex](https://www.llamaindex.ai/) project using [Next.js](https://nextjs.org/) with [Vercel AI RSC](https://sdk.vercel.ai/docs/ai-sdk-rsc).
 
 ## Getting Started
 
