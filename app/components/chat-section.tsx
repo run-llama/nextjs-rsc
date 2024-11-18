@@ -18,7 +18,7 @@ export default function ChatSection() {
   return (
     <ChatSectionUI handler={handler} className="w-full h-full">
       <ChatMessages className="shadow-xl rounded-xl">
-        <ChatMessages.List>
+        <ChatMessages.List className="h-[500px]">
           {handler.messages.map((message, index) => (
             <ChatMessage
               key={index}
